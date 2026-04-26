@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  cart      Cart?
+  orders    Order[]
+  @@map("users")
+}
+
+model Book {
+  id        Int      @id @default(autoincrement())
+  title     String
+  author    String
+  genre     String
+  publisher String
+  cartItems CartItem[]
+  orderItems OrderItem[] 
+  @@map("books")
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[] 
+  @@map("carts")
+}
+
+model CartItem {
+  id        Int    @id @default(autoincrement())
+  cartId    Int    @map("cart_id")
+  bookId    Int    @map("book_id")
+  quantity  Int
+  cart      Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  book      Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+
+  @@unique([cartId, bookId]) // prevents duplicate book entries
+  @@map("cart_items")
+}
+
+model Order {
+  id        Int        @id @default(autoincrement())
+  userId    Int?       @map("user_id")
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int    @id @default(autoincrement())
+  orderId   Int    @map("order_id")
+  bookId    Int?    @map("book_id")
+  quantity  Int
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  book  Book? @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("order_items")
+}

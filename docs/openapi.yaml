@@ -1,0 +1,571 @@
+openapi: 3.0.3
+
+info:
+  title: Bookstore API
+  version: 1.0.0
+  description: API for managing a bookstore, including books, users, and shopping carts.
+
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: Operations related to authentication and authorization
+  - name: Books
+    description: Operations related to books
+  - name: Cart
+    description: Operations related to shopping carts
+  - name: Orders
+    description: Operations related to orders
+  - name: Users
+    description: Operations related to users
+
+paths:
+
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        $ref: '#/components/requestBodies/AuthBody'
+      responses:
+        201:
+          description: User created
+        409:
+          $ref: '#/components/responses/ConflictError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        $ref: '#/components/requestBodies/AuthBody'
+      responses:
+        200:
+          description: JWT token returned
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /books:
+    get:
+      tags: [Books]
+      summary: Get all books (supports filtering)
+      parameters:
+        - in: query
+          name: title
+          schema:
+            type: string
+          description: Filter books by title (partial, case-insensitive)
+
+        - in: query
+          name: author
+          schema:
+            type: string
+          description: Filter books by author (partial, case-insensitive)
+
+        - in: query
+          name: genre
+          schema:
+            type: string
+          description: Filter books by genre (partial, case-insensitive)
+
+        - in: query
+          name: publisher
+          schema:
+            type: string
+          description: Filter books by publisher (partial, case-insensitive)
+
+      responses:
+        200:
+          description: List of books
+
+    post:
+      tags: [Books]
+      summary: Create new book (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/BookBody'
+        example:
+          title: "The Great Gatsby"
+          author: "F. Scott Fitzgerald"
+          genre: "Fiction"
+          publisher: "Scribner"
+          
+      responses:
+        201:
+          description: Book created
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+
+  /books/{id}:
+    get:
+      tags: [Books]
+      summary: Get book by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        200:
+          description: Book found
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags: [Books]
+      summary: Update book (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/BookBody'
+      responses:
+        200:
+          description: Book updated
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+
+    delete:
+      tags: [Books]
+      summary: Delete book (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        200:
+          $ref: '#/components/responses/SuccessMessage'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+
+
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Get current user's cart
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Cart items
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /cart/items:
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CartItemBody'
+      responses:
+        201:
+          description: Item added
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+    patch:
+      tags: [Cart]
+      summary: Update cart item
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CartItemBody'
+      responses:
+        200:
+          description: Item updated
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+  /cart/items/{bookId}:
+    delete:
+      tags: [Cart]
+      summary: Remove item from cart
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BookIdParam'
+      responses:
+        200:
+          $ref: '#/components/responses/SuccessMessage'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /cart/user/{userId}:
+    get:
+      tags: [Cart]
+      summary: Get cart by user ID (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        200:
+          description: Cart data
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Get current user's orders
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Orders list
+
+    post:
+      tags: [Orders]
+      summary: Checkout and create order
+      security:
+        - bearerAuth: []
+      responses:
+        201:
+          description: Order created
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order by ID (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        200:
+          description: Order found
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+
+    patch:
+      tags: [Orders]
+      summary: Update order (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/OrderUpdateBody'
+      responses:
+        200:
+          $ref: '#/components/responses/SuccessMessage'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+
+    delete:
+      tags: [Orders]
+      summary: Delete order (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        200:
+          $ref: '#/components/responses/SuccessMessage'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Users list
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        200:
+          description: User found
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+
+    put:
+      tags: [Users]
+      summary: Update user (Owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/UserUpdateBody'
+      responses:
+        200:
+          description: User updated
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        409:
+          $ref: '#/components/responses/ConflictError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+    delete:
+      tags: [Users]
+      summary: Delete user (Owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        204:
+          description: User deleted
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+
+  /users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: Update user role (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/RoleUpdateBody'
+      responses:
+        200:
+          description: Role updated
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        400:
+          $ref: '#/components/responses/BadRequestError'
+   
+
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+    BookIdParam:
+      name: bookId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        role:
+          type: string
+          enum: [USER, ADMIN]
+
+    Book:
+      type: object
+      properties:
+        title: { type: string }
+        author: { type: string }
+        genre: { type: string }
+        publisher: { type: string }
+
+    CartItem:
+      type: object
+      properties:
+        bookId: { type: integer }
+        quantity: { type: integer }
+        book:
+          $ref: '#/components/schemas/Book'
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+
+  requestBodies:
+
+    AuthBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email: { type: string }
+              password: { type: string }
+
+    BookBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Book'
+
+    CartItemBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              bookId: { type: integer }
+              quantity: { type: integer }
+
+    OrderUpdateBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              bookId: { type: integer }
+              quantity: { type: integer }
+
+    RoleUpdateBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              role: { type: string }
+
+    UserUpdateBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email: { type: string }
+              password: { type: string }
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+
+    NotFoundError:
+      description: Resource not found
+
+    SuccessMessage:
+      description: Success message
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    BadRequestError:
+      description: Bad request
+    
+    ForbiddenError:
+      description: Forbidden
