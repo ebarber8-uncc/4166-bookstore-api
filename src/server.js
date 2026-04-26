@@ -35,11 +35,11 @@ app.get('/health', (req, res) => {
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-app.use('/api/books', booksRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/books', booksRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/cart', cartRoutes);
+app.use('/orders', orderRoutes);
 
 app.use((req, res, next) => {
   const err = new Error('Not Found');
