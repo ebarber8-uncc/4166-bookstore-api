@@ -28,6 +28,11 @@ catch(error){
   process.exit(1);
 }
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use('/api/books', booksRoutes);
