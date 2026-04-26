@@ -571,3 +571,6 @@ components:
     
     ForbiddenError:
       description: Forbidden
+    
+    ConflictError:
+      description: Conflict error (e.g. duplicate email)
